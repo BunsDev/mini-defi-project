@@ -56,8 +56,8 @@ describe("Treasury tests", async function () {
         });
     })
 
-    describe("Swap function", () => {
-        it("Swaps tokens correctly", async function () {
+    describe("Swap functions", () => {
+        it("Swaps tokens correctly directly from user's wallet", async function () {
             const WETH = await ethers.getContractAt("IWETH", WETHAddress)
             const USDC = await ethers.getContractAt("IERC20", USDCAddress)
             const WETHBalanceBefore = await WETH.balanceOf(deployerAddress)
@@ -73,6 +73,40 @@ describe("Treasury tests", async function () {
             const USDCBalanceAfter = await USDC.balanceOf(deployerAddress)
             assert(WETHBalanceBefore > WETHBalanceAfter)
             assert(USDCBalanceBefore < USDCBalanceAfter)
+        });
+
+        it("Swaps internal tokens correctly that were previously deposited", async function () {
+            // First step: deposit tokens
+            const WETH = await ethers.getContractAt("IWETH", WETHAddress)
+            const WETHBalanceBefore = await WETH.balanceOf(deployerAddress)
+            const TreasuryUserBalanceBefore = await Treasury.userBalance(deployerAddress, WETHAddress)
+            await WETH.connect(deployer).approve(await Treasury.getAddress(), WETHBalanceBefore)
+            const amountIn = 1e18.toString()
+            const deposit = await Treasury.connect(deployer).deposit(WETHAddress, amountIn)
+            const WETHBalanceAfter = await WETH.balanceOf(deployerAddress)
+            const TreasuryUserBalanceAfter = await Treasury.userBalance(deployerAddress, WETHAddress)
+
+            
+            assert(WETHBalanceBefore > WETHBalanceAfter)
+            assert(TreasuryUserBalanceBefore < TreasuryUserBalanceAfter)
+
+
+            // Second step: swap internally 
+            const USDC = await ethers.getContractAt("IERC20", USDCAddress)
+            const WETHInternalBalanceBeforeSwap = await Treasury.userBalance(deployerAddress, WETHAddress)
+            const USDCInternalBalanceBeforeSwap = await Treasury.userBalance(deployerAddress, USDCAddress)
+            await WETH.connect(deployer).approve(await Treasury.getAddress(), WETHBalanceBefore)
+            console.log("Before", WETHInternalBalanceBeforeSwap.toString(), USDCInternalBalanceBeforeSwap.toString())
+            const timestamp = Date.now()
+            const swap = await Treasury.connect(deployer).swapInternalBalance([WETHAddress, USDCAddress], 0, WETHInternalBalanceBeforeSwap.toString(), timestamp)
+
+            const WETHInternalBalanceAfterSwap = await Treasury.userBalance(deployerAddress, WETHAddress)
+            const USDCInternalBalanceAfterSwap =  await Treasury.userBalance(deployerAddress, USDCAddress)
+            console.log("After", WETHInternalBalanceAfterSwap.toString(), USDCInternalBalanceAfterSwap.toString())
+            
+            assert(WETHInternalBalanceAfterSwap === '0')
+            assert(WETHBalanceBefore > WETHBalanceAfter)
+            assert(USDCInternalBalanceAfterSwap < USDCInternalBalanceBeforeSwap)
         });
     })
 
