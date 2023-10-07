@@ -1,22 +1,22 @@
 const { assert } = require("chai")
-const { network, deployments, ethers, getNamedAccounts } = require("hardhat")
-const { loadFixture } = require('ethereum-waffle')
-const { deployTreasury } = require("../scripts/DeployTreasury")
+const {ethers } = require("hardhat")
 
-let treasury, deployer
-const uniswapRouterAddress = "0x9a489505a00cE272eAa5e07Dba6491314CaE3796"
+const SushiRouterV2Address = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"
+let deployedTreasuryAddress = "0xC8fc271191cD3bD63De3924A671871AcFc1e805a"
 
 describe("Treasury tests", async function () {
     before(async () => {
-        deployer = (await getNamedAccounts()).deployer
-        await deployments.fixture(["all"])
-        treasury = await ethers.getContract("Raffle", deployer)
+        Treasury = await ethers.getContractAt("Treasury", deployedTreasuryAddress)
     });
 
     describe("constructor", () => {
         it("sets starting values correctly", async function () {
-            const uniswapAddress = await treasury.uniswapRouter(); // Use 'await' here
-            assert.equal(uniswapAddress, uniswapRouterAddress); // Corrected 'uniswapRouter' to 'uniswapAddress'
+            const SushiRouterV2Address_ = await Treasury.uniswapRouter();
+            assert.equal(SushiRouterV2Address_, SushiRouterV2Address);
         });
     });
+
+    describe("swap function", () => {
+
+    })
 })

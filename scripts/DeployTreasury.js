@@ -24,6 +24,8 @@ const deployTreasury = async () => {
     } else {
         console.error("Treasury contract deployment failed.")
     }
+
+    return Treasury.getAddress()
 }
 
 deployTreasury()

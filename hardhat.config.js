@@ -7,6 +7,14 @@ module.exports = {
   solidity: "0.8.20",
   defaultNetwork: "hardhat",
   networks: {
+    hardhat: {
+      chainId: 42161,
+      forking: {
+        enabled: true,
+        url: 'https://arb1.arbitrum.io/rpc', // forking Arbitrum
+        accounts: [process.env.PRIVATE_KEY]
+      }
+    },
     arbitrum: {
       url: 'https://arb1.arbitrum.io/rpc',
       accounts: [process.env.PRIVATE_KEY]
