@@ -37,7 +37,26 @@ describe("Treasury tests", async function () {
         });
     });
 
-    describe("swap function", () => {
+    describe("Deposit function", () => {
+        it("Deposits any token correctly into the Treasury", async function () {
+            const WETH = await ethers.getContractAt("IWETH", WETHAddress)
+            const WETHBalanceBefore = await WETH.balanceOf(deployerAddress)
+            const TreasuryUserBalanceBefore = await Treasury.userBalance(deployerAddress, WETHAddress)
+            await WETH.connect(deployer).approve(await Treasury.getAddress(), WETHBalanceBefore)
+
+            const amountIn = 1e18.toString()
+            const deposit = await Treasury.connect(deployer).deposit(WETHAddress, amountIn)
+
+            const WETHBalanceAfter = await WETH.balanceOf(deployerAddress)
+            const TreasuryUserBalanceAfter = await Treasury.userBalance(deployerAddress, WETHAddress)
+
+            
+            assert(WETHBalanceBefore > WETHBalanceAfter)
+            assert(TreasuryUserBalanceBefore < TreasuryUserBalanceAfter)
+        });
+    })
+
+    describe("Swap function", () => {
         it("Swaps tokens correctly", async function () {
             const WETH = await ethers.getContractAt("IWETH", WETHAddress)
             const USDC = await ethers.getContractAt("IERC20", USDCAddress)
@@ -45,13 +64,19 @@ describe("Treasury tests", async function () {
             const USDCBalanceBefore = await USDC.balanceOf(deployerAddress)
 
             await WETH.connect(deployer).approve(await Treasury.getAddress(), WETHBalanceBefore)
+
             const timestamp = Date.now()
-            const swap = await Treasury.connect(deployer).swapTokens([WETHAddress, USDCAddress], 0, 1e18.toString(), timestamp)
+            const amountIn = 1e18.toString()
+            const swap = await Treasury.connect(deployer).swapTokens([WETHAddress, USDCAddress], 0, amountIn, timestamp)
+
             const WETHBalanceAfter = await WETH.balanceOf(deployerAddress)
             const USDCBalanceAfter = await USDC.balanceOf(deployerAddress)
             assert(WETHBalanceBefore > WETHBalanceAfter)
             assert(USDCBalanceBefore < USDCBalanceAfter)
         });
     })
+
+    
+
     
 })
