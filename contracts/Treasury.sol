@@ -33,18 +33,22 @@ contract Treasury {
     }
 
     // @notice: Function use for swapping tokens internally that were previously deposited
-    function swapInternalBalance(address[] memory path, uint256 mintAmountOut, uint256 amountIn, uint256 deadline) external returns (uint256 amountOut) {
-        require(userBalance[msg.sender][path[0]] > amountIn, "User has not enough balance for swap");
+    function swapInternalBalance(address[] memory path, uint256 minAmountOut, uint256 amountIn, uint256 deadline) public {
+        require(userBalance[msg.sender][path[0]] >= amountIn, "User has not enough balance for swap");
         userBalance[msg.sender][path[0]] -= amountIn;
 
         uint256 amountTokenOutBefore = IERC20(path[path.length - 1]).balanceOf(address(this));
-        this.swapTokens(path, mintAmountOut, amountIn, deadline);
-        amountOut = IERC20(path[path.length - 1]).balanceOf(address(this)) - amountTokenOutBefore;
+
+        IERC20(path[0]).approve(address(uniswapRouter), amountIn);
+        uniswapRouter.swapExactTokensForTokens(amountIn, minAmountOut, path, address(this), deadline);
+
+        uint256 amountOut = IERC20(path[path.length - 1]).balanceOf(address(this)) - amountTokenOutBefore;
         userBalance[msg.sender][path[path.length - 1]] += amountOut;
+        emit TokenSwapped(msg.sender, path[0], path[path.length - 1], amountIn);
     }
 
     // @notice: Function use for swapping tokens directly from user's wallet
-    function swapTokens(address[] memory path, uint256 minAmountOut, uint256 amountIn, uint256 deadline) external {
+    function swapTokens(address[] memory path, uint256 minAmountOut, uint256 amountIn, uint256 deadline) public {
         IERC20(path[0]).safeTransferFrom(msg.sender, address(this), amountIn);
         IERC20(path[0]).approve(address(uniswapRouter), amountIn);
         uniswapRouter.swapExactTokensForTokens(amountIn, minAmountOut, path, msg.sender, deadline);

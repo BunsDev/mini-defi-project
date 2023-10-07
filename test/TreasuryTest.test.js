@@ -4,14 +4,14 @@ const { networks } = require("../hardhat.config")
 
 const deployerAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 const SushiRouterV2Address = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"
-let deployedTreasuryAddress = "0xC8fc271191cD3bD63De3924A671871AcFc1e805a"
+let deployedTreasuryAddress = "0x96A70435C30457a62B557FE230e53F6650802995"
 const WETHAddress = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
 const ARBAddress = "0x912CE59144191C1204E64559FE8253a0e49E6548"
 const USDCAddress = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
 let deployer
 
 describe("Treasury tests", async function () {
-    beforeEach(async () => {
+    this.beforeAll(async () => {
         Treasury = await ethers.getContractAt("Treasury", deployedTreasuryAddress)
         // const impersonateDeployer = await ethers.getImpersonatedSigner(deployerAddress);
         // deployer = await ethers.getSigner(deployerAddress)
@@ -25,7 +25,7 @@ describe("Treasury tests", async function () {
 
         // Get WETH
         const WETH = await ethers.getContractAt("IWETH", WETHAddress)
-        const amountIn = 1e18.toString()
+        const amountIn = 10e18.toString()
         await WETH.connect(deployer).deposit({value: amountIn})
 
     });
@@ -74,7 +74,9 @@ describe("Treasury tests", async function () {
             assert(WETHBalanceBefore > WETHBalanceAfter)
             assert(USDCBalanceBefore < USDCBalanceAfter)
         });
+    })
 
+    describe("Swap Internal Balance", () => {
         it("Swaps internal tokens correctly that were previously deposited", async function () {
             // First step: deposit tokens
             const WETH = await ethers.getContractAt("IWETH", WETHAddress)
@@ -86,7 +88,6 @@ describe("Treasury tests", async function () {
             const WETHBalanceAfter = await WETH.balanceOf(deployerAddress)
             const TreasuryUserBalanceAfter = await Treasury.userBalance(deployerAddress, WETHAddress)
 
-            
             assert(WETHBalanceBefore > WETHBalanceAfter)
             assert(TreasuryUserBalanceBefore < TreasuryUserBalanceAfter)
 
@@ -96,17 +97,15 @@ describe("Treasury tests", async function () {
             const WETHInternalBalanceBeforeSwap = await Treasury.userBalance(deployerAddress, WETHAddress)
             const USDCInternalBalanceBeforeSwap = await Treasury.userBalance(deployerAddress, USDCAddress)
             await WETH.connect(deployer).approve(await Treasury.getAddress(), WETHBalanceBefore)
-            console.log("Before", WETHInternalBalanceBeforeSwap.toString(), USDCInternalBalanceBeforeSwap.toString())
             const timestamp = Date.now()
             const swap = await Treasury.connect(deployer).swapInternalBalance([WETHAddress, USDCAddress], 0, WETHInternalBalanceBeforeSwap.toString(), timestamp)
 
             const WETHInternalBalanceAfterSwap = await Treasury.userBalance(deployerAddress, WETHAddress)
             const USDCInternalBalanceAfterSwap =  await Treasury.userBalance(deployerAddress, USDCAddress)
-            console.log("After", WETHInternalBalanceAfterSwap.toString(), USDCInternalBalanceAfterSwap.toString())
-            
-            assert(WETHInternalBalanceAfterSwap === '0')
-            assert(WETHBalanceBefore > WETHBalanceAfter)
-            assert(USDCInternalBalanceAfterSwap < USDCInternalBalanceBeforeSwap)
+    
+            assert(WETHInternalBalanceAfterSwap.toString() === '0')
+            assert(WETHInternalBalanceBeforeSwap > WETHInternalBalanceAfterSwap)
+            assert(USDCInternalBalanceAfterSwap > USDCInternalBalanceBeforeSwap)
         });
     })
 
