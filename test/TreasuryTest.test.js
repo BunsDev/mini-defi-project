@@ -2,9 +2,10 @@ const { assert } = require("chai")
 const { ethers } = require("hardhat")
 const { networks } = require("../hardhat.config")
 
-const deployerAddress = "0xA8be82C6091aFb27c5597aFE5a2bab7f91Bb0277"
+const deployerAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 const SushiRouterV2Address = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"
 let deployedTreasuryAddress = "0xC8fc271191cD3bD63De3924A671871AcFc1e805a"
+const WETHAddress = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
 const ARBAddress = "0x912CE59144191C1204E64559FE8253a0e49E6548"
 const USDCAddress = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
 let deployer
@@ -21,6 +22,12 @@ describe("Treasury tests", async function () {
 
         deployer = await ethers.getSigner(deployerAddress)
         console.log("BeforeEach")
+
+        // Get WETH
+        const WETH = await ethers.getContractAt("IWETH", WETHAddress)
+        const amountIn = 1e18.toString()
+        await WETH.connect(deployer).deposit({value: amountIn})
+
     });
 
     describe("constructor", () => {
@@ -32,12 +39,19 @@ describe("Treasury tests", async function () {
 
     describe("swap function", () => {
         it("Swaps tokens correctly", async function () {
-            const ARB = await ethers.getContractAt("IERC20", ARBAddress)
+            const WETH = await ethers.getContractAt("IWETH", WETHAddress)
+            const USDC = await ethers.getContractAt("IERC20", USDCAddress)
+            const WETHBalanceBefore = await WETH.balanceOf(deployerAddress)
+            const USDCBalanceBefore = await USDC.balanceOf(deployerAddress)
+
+            await WETH.connect(deployer).approve(await Treasury.getAddress(), WETHBalanceBefore)
             const timestamp = Date.now()
-            const ARBBalance = await ARB.balanceOf(deployerAddress)
-            await ARB.connect(deployer).approve(await Treasury.getAddress(), ARBBalance)
-            console.log("postApprove", ARBBalance.toString())
-            const swap = await Treasury.connect(deployer).swapTokens([ARBAddress, USDCAddress], 0, ARBBalance.toString(), timestamp)
+            const swap = await Treasury.connect(deployer).swapTokens([WETHAddress, USDCAddress], 0, 1e18.toString(), timestamp)
+            const WETHBalanceAfter = await WETH.balanceOf(deployerAddress)
+            const USDCBalanceAfter = await USDC.balanceOf(deployerAddress)
+            assert(WETHBalanceBefore > WETHBalanceAfter)
+            assert(USDCBalanceBefore < USDCBalanceAfter)
         });
     })
+    
 })
