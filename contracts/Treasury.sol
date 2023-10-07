@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.20;
 
+import "hardhat/console.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./interfaces/IUniswapRouterV2.sol";
@@ -29,7 +30,9 @@ contract Treasury {
     }
 
     function swapTokens(address[] memory path, uint256 minAmountOut, uint256 amountIn, uint256 deadline) external {
+        console.log("HERE", amountIn);
         IERC20(path[0]).safeTransferFrom(msg.sender, address(this), amountIn);
+        console.log("HERE2");
         IERC20(path[0]).approve(address(uniswapRouter), amountIn);
         uniswapRouter.swapExactTokensForTokens(amountIn, minAmountOut, path, msg.sender, deadline);
     }
