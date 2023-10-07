@@ -5,23 +5,31 @@ const deployTreasury = async () => {
     const accounts = await hre.ethers.getSigners()
     const deployer = accounts[0]
 
-    const SmartRouterAddress = "0x9a489505a00cE272eAa5e07Dba6491314CaE3796"; // PancakeSwap Smart Router in BSC Testnet
+    const SushiRouterV2 = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"
 
-    const overrides = {
-        gasLimit: 2000000, 
-        gasPrice: ethers.parseUnits('10', 'gwei'),
-    };
+    const TreasuryFactory = await hre.ethers.getContractFactory('Treasury');
+    const Treasury = await TreasuryFactory.connect(deployer).deploy(SushiRouterV2);
 
-    const args = SmartRouterAddress
-    const Treasury = await hre.ethers.getContractFactory('Treasury');
-    const treasury = await Treasury.connect(deployer).deploy(args, overrides);
-    
-    console.log("Treasury contract address:", treasury.address);
+    // Wait for the deployment to be confirmed
+    const deploymentReceipt = await Treasury.deploymentTransaction().wait(15);
 
-    if (process.env.ETHERSCAN_API_KEY) {
-        console.log("Verifying...")
-        await verify(treasury.address, args)
+    if (deploymentReceipt.status === 1) {
+        // Contract deployment was successful
+        console.log("Treasury contract address:", await Treasury.getAddress())
+
+        if (process.env.ETHERSCAN_API_KEY) {
+            console.log("Verifying...")
+            await verify(await Treasury.getAddress(), [SushiRouterV2])
+        }
+    } else {
+        console.error("Treasury contract deployment failed.")
     }
 }
 
 deployTreasury()
+
+module.exports = { deployTreasury }
+
+
+
+
