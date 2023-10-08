@@ -19,7 +19,7 @@ describe("Treasury tests", async function () {
         await hre.network.provider.request({
             method: "hardhat_impersonateAccount",
             params: [deployerAddress],
-          });
+        });
 
         deployer = await ethers.getSigner(deployerAddress)
         console.log("BeforeEach")
@@ -27,7 +27,7 @@ describe("Treasury tests", async function () {
         // Get WETH
         const WETH = await ethers.getContractAt("IWETH", WETHAddress)
         const amountIn = 10e18.toString()
-        await WETH.connect(deployer).deposit({value: amountIn})
+        await WETH.connect(deployer).deposit({ value: amountIn })
 
     });
 
@@ -51,7 +51,7 @@ describe("Treasury tests", async function () {
             const WETHBalanceAfter = await WETH.balanceOf(deployerAddress)
             const TreasuryUserBalanceAfter = await Treasury.userBalance(deployerAddress, WETHAddress)
 
-            
+
             assert(WETHBalanceBefore > WETHBalanceAfter)
             assert(TreasuryUserBalanceBefore < TreasuryUserBalanceAfter)
         });
@@ -102,8 +102,8 @@ describe("Treasury tests", async function () {
             const swap = await Treasury.connect(deployer).swapInternalBalance([WETHAddress, USDCAddress], 0, WETHInternalBalanceBeforeSwap.toString(), timestamp)
 
             const WETHInternalBalanceAfterSwap = await Treasury.userBalance(deployerAddress, WETHAddress)
-            const USDCInternalBalanceAfterSwap =  await Treasury.userBalance(deployerAddress, USDCAddress)
-    
+            const USDCInternalBalanceAfterSwap = await Treasury.userBalance(deployerAddress, USDCAddress)
+
             assert(WETHInternalBalanceAfterSwap.toString() === '0')
             assert(WETHInternalBalanceBeforeSwap > WETHInternalBalanceAfterSwap)
             assert(USDCInternalBalanceAfterSwap > USDCInternalBalanceBeforeSwap)
@@ -116,7 +116,7 @@ describe("Treasury tests", async function () {
             const WETH = await ethers.getContractAt("IWETH", WETHAddress)
             const USDT = await ethers.getContractAt("IERC20", USDTAddress)
             const WETHBalanceBefore = await WETH.balanceOf(deployerAddress)
-            
+
             await WETH.connect(deployer).approve(await Treasury.getAddress(), WETHBalanceBefore)
 
             const timestamp = Date.now()
@@ -142,7 +142,7 @@ describe("Treasury tests", async function () {
             const WETH = await ethers.getContractAt("IWETH", WETHAddress)
             const USDT = await ethers.getContractAt("IERC20", USDTAddress)
             const WETHBalanceBefore = await WETH.balanceOf(deployerAddress)
-            
+
             await WETH.connect(deployer).approve(await Treasury.getAddress(), WETHBalanceBefore)
 
             const timestamp = Date.now()
@@ -153,13 +153,14 @@ describe("Treasury tests", async function () {
 
             assert(USDTBalanceAfter > 0)
             assert(WETHBalanceAfter == 0)
-            console.log("USDTBalance", USDTBalanceAfter)
+
             // Second step: deposit USDT
             await USDT.connect(deployer).approve(await Treasury.getAddress(), USDTBalanceAfter)
             const deposit = await Treasury.connect(deployer).depositStableCoinForDistributeInPools(USDTBalanceAfter)
             const TreasuryUSDTBalanceAfter = await USDT.balanceOf(deployedTreasuryAddress)
             assert(TreasuryUSDTBalanceAfter == USDTBalanceAfter)
 
+            // Third step: add liquidity
             const addLiquidity = await Treasury.connect(deployer).addLiquidity(Date.now())
             const firstPairLpAmount = await Treasury.connect(deployer).firstPairLpAmount()
             const secondPairLpAmount = await Treasury.connect(deployer).secondPairLpAmount()
@@ -167,9 +168,40 @@ describe("Treasury tests", async function () {
             assert(firstPairLpAmount > 0)
             assert(secondPairLpAmount > 0)
         });
+
+        it("Swaps WETH for USDT, then depositStableCoin correctly, then adds liquidity and then removes liquidity", async function () {
+            // First step: swap WETH to USDT
+            const WETH = await ethers.getContractAt("IWETH", WETHAddress)
+            const USDT = await ethers.getContractAt("IERC20", USDTAddress)
+            const WETHBalanceBefore = await WETH.balanceOf(deployerAddress)
+
+            await WETH.connect(deployer).approve(await Treasury.getAddress(), WETHBalanceBefore)
+
+            const timestamp = Date.now()
+            const amountIn = 1e18.toString()
+            const swap = await Treasury.connect(deployer).swapTokens([WETHAddress, USDTAddress], 0, WETHBalanceBefore, timestamp)
+            const WETHBalanceAfter = await WETH.balanceOf(deployerAddress)
+            const USDTBalanceAfter = await USDT.balanceOf(deployerAddress)
+
+            assert(USDTBalanceAfter > 0)
+            assert(WETHBalanceAfter == 0)
+
+            // Second step: deposit USDT
+            await USDT.connect(deployer).approve(await Treasury.getAddress(), USDTBalanceAfter)
+            const deposit = await Treasury.connect(deployer).depositStableCoinForDistributeInPools(USDTBalanceAfter)
+            const TreasuryUSDTBalanceAfter = await USDT.balanceOf(deployedTreasuryAddress)
+            assert(TreasuryUSDTBalanceAfter == USDTBalanceAfter)
+
+            // Third step: add liquidity
+            const addLiquidity = await Treasury.connect(deployer).addLiquidity(Date.now())
+            const firstPairLpAmount = await Treasury.connect(deployer).firstPairLpAmount()
+            const secondPairLpAmount = await Treasury.connect(deployer).secondPairLpAmount()
+
+            assert(firstPairLpAmount > 0)
+            assert(secondPairLpAmount > 0)
+
+            // Fourth step: remove liquidity
+            const removeLiquidity = await Treasury.connect(deployer).removeLiquidity(50, 50, Date.now())
+        })
     })
-
-    
-
-    
 })
