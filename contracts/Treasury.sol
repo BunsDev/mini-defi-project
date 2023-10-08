@@ -18,9 +18,9 @@ contract Treasury {
 
     address public firstPair;
     address public secondPair;
-    mapping(address => uint8) poolPercentages;
+    mapping(address => uint8) public poolPercentages;
     address stableCoin;
-    uint256 stableCoinBalanceForPools;
+    uint256 public stableCoinBalanceForPools;
     uint256 public firstPairLpAmount;
     uint256 public secondPairLpAmount;
 
@@ -44,8 +44,8 @@ contract Treasury {
         firstPair = firstPair_;
         secondPair = secondPair_;
 
-        poolPercentages[firstPair] = firstPercentage_;
-        poolPercentages[secondPair] = secondPercentage_;
+        poolPercentages[firstPair_] = firstPercentage_;
+        poolPercentages[firstPair_] = secondPercentage_;
 
         stableCoin = stableCoinAddress;
     }
@@ -96,7 +96,7 @@ contract Treasury {
     // @notice: Function use for adding liquidity to different pools
     function addLiquidity(uint256 deadline) external {
         uint256 firstPoolAmount = stableCoinBalanceForPools * poolPercentages[firstPair] / 100;
-        uint256 secondPoolAmount = stableCoinBalanceForPools * poolPercentages[secondPair] / 100;
+        uint256 secondPoolAmount = stableCoinBalanceForPools - firstPoolAmount;
 
         stableCoinBalanceForPools = 0;
 
@@ -136,8 +136,8 @@ contract Treasury {
     }
 
     // OnlyOwner functions
-    function modifyPoolPercentages(uint8 firstNewPercentage, uint8 secondNewPercentage, uint8 thirdNewPercentage) external onlyOwner {
-        require(firstNewPercentage + secondNewPercentage + thirdNewPercentage == 100, "Percentages does not sum up 100");
+    function modifyPoolPercentages(uint8 firstNewPercentage, uint8 secondNewPercentage) external onlyOwner {
+        require(firstNewPercentage + secondNewPercentage == 100, "Percentages does not sum up 100");
         poolPercentages[firstPair] = firstNewPercentage;
         poolPercentages[secondPair] = secondNewPercentage;
     }
