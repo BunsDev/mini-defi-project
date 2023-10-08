@@ -27,4 +27,10 @@ Here are some diagrams for each funcitonality:
 ![Second functionality](https://github.com/JMariadlcs/mini-defi-project/blob/main/diagrams/second.png)
 
 3. Third functionality:
-![Third functionality](https://github.com/JMariadlcs/mini-defi-project/blob/main/diagrams/third.png)
+
+- Add liquidity:
+![Third functionality](https://github.com/JMariadlcs/mini-defi-project/blob/main/diagrams/third1.png)
+
+- Add liquidity
+After the above step:
+![Third functionality](https://github.com/JMariadlcs/mini-defi-project/blob/main/diagrams/third2.png)
