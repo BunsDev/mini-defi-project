@@ -125,30 +125,13 @@ contract Treasury {
         require(firstPercentage + secondPercentage == 100, "Percentage must be below 100");
 
         uint256 firstLpAmountToRemove = firstPairLpAmount * firstPercentage / 100;
-        uint256 secondLpAmountToRemove = secondPercentage * secondPercentage / 100;
-        (uint256 firstAmountA, uint256 firstAmountB) = uniswapRouter.removeLiquidity(IUniswapV2Pair(firstPair).token0(), IUniswapV2Pair(firstPair).token1(), firstLpAmountToRemove, 0, 0, address(this), deadline);
+        uint256 secondLpAmountToRemove = secondPairLpAmount * secondPercentage / 100;
+        uniswapRouter.removeLiquidity(IUniswapV2Pair(firstPair).token0(), IUniswapV2Pair(firstPair).token1(), firstLpAmountToRemove, 0, 0, address(this), deadline);
         firstPairLpAmount -= firstLpAmountToRemove;
-        address[] memory path;
-        path = new address[](2);
-        if (firstAmountB > 0) { // swapTokenB to tokenA (tokenA always is stableCoin due to the selected pairs)
-            IERC20(IUniswapV2Pair(firstPair).token1()).approve(address(uniswapRouter), firstAmountB);
-            path[0] = IUniswapV2Pair(firstPair).token1();
-            path[1] = IUniswapV2Pair(firstPair).token0();
-            uint256[] memory amountsOut = uniswapRouter.swapExactTokensForTokens(firstAmountB, 0, path, address(this), deadline);
-            stableCoinBalanceForPools += amountsOut[amountsOut.length - 1];
-        }
-        stableCoinBalanceForPools += firstAmountA;
 
-        (uint256 secondAmountA, uint256 secondAmountB) = uniswapRouter.removeLiquidity(IUniswapV2Pair(secondPair).token0(), IUniswapV2Pair(secondPair).token1(), secondLpAmountToRemove, 0, 0, address(this), deadline);
-        secondLpAmountToRemove -= secondLpAmountToRemove;
-        if (secondAmountB > 0) { // swapTokenB to tokenA (tokenA always is stableCoin due to the selected pairs)
-            IERC20(IUniswapV2Pair(secondPair).token1()).approve(address(uniswapRouter), secondAmountB);
-            path[0] = IUniswapV2Pair(secondPair).token1();
-            path[1] = IUniswapV2Pair(secondPair).token0();
-            uint256[] memory amountsOut = uniswapRouter.swapExactTokensForTokens(secondAmountB, 0, path, address(this), deadline);
-            stableCoinBalanceForPools += amountsOut[amountsOut.length - 1];
-        }
-        stableCoinBalanceForPools += secondAmountA;
+
+        uniswapRouter.removeLiquidity(IUniswapV2Pair(secondPair).token0(), IUniswapV2Pair(secondPair).token1(), secondLpAmountToRemove, 0, 0, address(this), deadline);
+        secondPairLpAmount -= secondLpAmountToRemove;
     }
 
     // OnlyOwner functions
