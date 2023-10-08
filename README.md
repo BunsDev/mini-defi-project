@@ -1,5 +1,8 @@
 # Mini DeFi Project
 This document presents a mini DeFi project centered around a primary smart contract, Treasury.sol.
+The contracts are being deployed to `Arbitrum`. The testing of the contracts has been done forking the Arbitrum chain.
+You should include an `.env` file with `PRIVATE_KEY` refering to your account private key.
+The deployed
 
 The protocol comprises three primary functionalities:
 
