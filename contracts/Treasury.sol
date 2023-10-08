@@ -18,10 +18,11 @@ contract Treasury {
 
     address public firstPair;
     address public secondPair;
-    address public thirdPair;
     mapping(address => uint8) poolPercentages;
     address stableCoin;
     uint256 stableCoinBalanceForPools;
+    uint256 public firstPairLpAmount;
+    uint256 public secondPairLpAmount;
 
     mapping(address => mapping(address => uint256)) public userBalance; // User's balance of a specific token
     event TokenDeposited(address userAddress, address tokenAddress, uint256 amount);
@@ -33,8 +34,8 @@ contract Treasury {
         _;
     }
 
-    constructor(address uniswapRouterAddress, address uniswapFactoryAddress, address firstPair_, address secondPair_, address thirdPair_, uint8 firstPercentage_, uint8 secondPercentage_, uint8 thirdPercentage_, address stableCoinAddress) {
-        require(firstPercentage_ + secondPercentage_ + thirdPercentage_ == 100, "Percentages does not sum up 100");
+    constructor(address uniswapRouterAddress, address uniswapFactoryAddress, address firstPair_, address secondPair_, uint8 firstPercentage_, uint8 secondPercentage_, address stableCoinAddress) {
+        require(firstPercentage_ + secondPercentage_ == 100, "Percentages does not sum up 100");
         owner = msg.sender;
 
         uniswapRouter = IUniswapRouterV2(uniswapRouterAddress);
@@ -42,11 +43,9 @@ contract Treasury {
 
         firstPair = firstPair_;
         secondPair = secondPair_;
-        thirdPair = thirdPair_;
 
         poolPercentages[firstPair] = firstPercentage_;
         poolPercentages[secondPair] = secondPercentage_;
-        poolPercentages[thirdPair] = thirdPercentage_;
 
         stableCoin = stableCoinAddress;
     }
@@ -87,29 +86,59 @@ contract Treasury {
     }
 
 
+    // @notice: Function use for depositing stableCoin in the Treasury for later using them to addLiquidity
     function depositStableCoinForDistributeInPools(uint256 amount) external {
         stableCoinBalanceForPools += amount;
         IERC20(stableCoin).safeTransferFrom(msg.sender, address(this), amount);
         emit DepositStableCoinForPools(amount);
     }
 
-    function depositInPool(uint256 deadline) external {
+    // @notice: Function use for adding liquidity to different pools
+    function addLiquidity(uint256 deadline) external {
         uint256 firstPoolAmount = stableCoinBalanceForPools * poolPercentages[firstPair] / 100;
         uint256 secondPoolAmount = stableCoinBalanceForPools * poolPercentages[secondPair] / 100;
-        uint256 firstThirdAmount = stableCoinBalanceForPools * poolPercentages[thirdPair] / 100;
 
-        uniswapRouter.addLiquidity(IUniswapV2Pair(firstPair).token0(), IUniswapV2Pair(firstPair).token1(), firstPoolAmount, 0, 0, 0, address(this), deadline);
-        uniswapRouter.addLiquidity(IUniswapV2Pair(secondPair).token0(), IUniswapV2Pair(secondPair).token1(), secondPoolAmount, 0, 0, 0, address(this), deadline);
-        uniswapRouter.addLiquidity(IUniswapV2Pair(thirdPair).token0(), IUniswapV2Pair(thirdPair).token1(), firstThirdAmount, 0, 0, 0, address(this), deadline);
+        stableCoinBalanceForPools = 0;
+
+        (, , uint256 firstPairLpAmount_) = uniswapRouter.addLiquidity(IUniswapV2Pair(firstPair).token0(), IUniswapV2Pair(firstPair).token1(), firstPoolAmount, 0, 0, 0, address(this), deadline);
+        (, , uint256 secondPairLpAmount_) = uniswapRouter.addLiquidity(IUniswapV2Pair(secondPair).token0(), IUniswapV2Pair(secondPair).token1(), secondPoolAmount, 0, 0, 0, address(this), deadline);
+        
+        firstPairLpAmount += firstPairLpAmount_;
+        secondPairLpAmount += secondPairLpAmount_;
     }
 
-    
+     // @notice: Function use for removing liquidity to different pools
+    function removeLiquidity(uint8 firstPercentage, uint8 secondPercentage, uint256 deadline) external {
+        require(firstPercentage + secondPercentage == 100, "Percentage must be below 100");
+
+        uint256 firstLpAmountToRemove = firstPairLpAmount * firstPercentage / 100;
+        uint256 secondLpAmountToRemove = secondPercentage * secondPercentage / 100;
+        (uint256 firstAmountA, uint256 firstAmountB) = uniswapRouter.removeLiquidity(IUniswapV2Pair(firstPair).token0(), IUniswapV2Pair(firstPair).token1(), firstLpAmountToRemove, 0, 0, address(this), deadline);
+        address[] memory path;
+        if (firstAmountB > 0) { // swapTokenB to tokenA (tokenA always is stableCoin due to the selected pairs)
+            IERC20(IUniswapV2Pair(firstPair).token1()).approve(address(uniswapRouter), firstAmountB);
+            path[0] = IUniswapV2Pair(firstPair).token1();
+            path[1] = IUniswapV2Pair(firstPair).token0();
+            uint256[] memory amountsOut = uniswapRouter.swapExactTokensForTokens(firstAmountB, 0, path, address(this), deadline);
+            stableCoinBalanceForPools += amountsOut[amountsOut.length - 1];
+        }
+        stableCoinBalanceForPools += firstAmountA;
+
+        (uint256 secondAmountA, uint256 secondAmountB) = uniswapRouter.removeLiquidity(IUniswapV2Pair(secondPair).token0(), IUniswapV2Pair(secondPair).token1(), secondLpAmountToRemove, 0, 0, address(this), deadline);
+        if (secondAmountB > 0) { // swapTokenB to tokenA (tokenA always is stableCoin due to the selected pairs)
+            IERC20(IUniswapV2Pair(secondPair).token1()).approve(address(uniswapRouter), secondAmountB);
+            path[0] = IUniswapV2Pair(secondPair).token1();
+            path[1] = IUniswapV2Pair(secondPair).token0();
+            uint256[] memory amountsOut = uniswapRouter.swapExactTokensForTokens(secondAmountB, 0, path, address(this), deadline);
+            stableCoinBalanceForPools += amountsOut[amountsOut.length - 1];
+        }
+        stableCoinBalanceForPools += secondAmountA;
+    }
 
     // OnlyOwner functions
     function modifyPoolPercentages(uint8 firstNewPercentage, uint8 secondNewPercentage, uint8 thirdNewPercentage) external onlyOwner {
         require(firstNewPercentage + secondNewPercentage + thirdNewPercentage == 100, "Percentages does not sum up 100");
         poolPercentages[firstPair] = firstNewPercentage;
         poolPercentages[secondPair] = secondNewPercentage;
-        poolPercentages[thirdPair] = thirdNewPercentage;
     }
 }
