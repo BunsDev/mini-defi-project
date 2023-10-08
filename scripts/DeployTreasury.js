@@ -23,7 +23,7 @@ const deployTreasury = async () => {
 
         if (process.env.ETHERSCAN_API_KEY) {
             console.log("Verifying...")
-            await verify(await Treasury.getAddress(), [SushiRouterV2])
+            await verify(await Treasury.getAddress(), [SushiRouterV2, SushiFactoryV2, USDTUSDCePair, USDTMIM_Pair, 50, 50, USDTAddress])
         }
     } else {
         console.error("Treasury contract deployment failed.")
