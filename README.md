@@ -22,4 +22,9 @@ Here are some diagrams for each funcitonality:
 
 1. First functionality:
 ![First functionality](https://github.com/JMariadlcs/mini-defi-project/blob/main/diagrams/first.png)
+
+2. Second functionality:
 ![Second functionality](https://github.com/JMariadlcs/mini-defi-project/blob/main/diagrams/second.png)
+
+3. Third functionality:
+![Third functionality](https://github.com/JMariadlcs/mini-defi-project/blob/main/diagrams/third.png)
