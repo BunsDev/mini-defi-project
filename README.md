@@ -21,4 +21,4 @@ TO DO: The addLiquidity and removeLiquidity functions should implement and acces
 Here are some diagrams for each funcitonality:
 
 1. First functionality:
-![First functionality](https://github.com/JMariadlcs/mini-defi-project/diagrams/first.png)
+![First functionality](https://github.com/JMariadlcs/mini-defi-project/blob/main/diagrams/first.png)
