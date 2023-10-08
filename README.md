@@ -17,3 +17,8 @@ The protocol comprises three primary functionalities:
 3. The most important functionality: The `Treasury` contract can receive `StableCoin` funds, which has been deployed as USDT in Arbitrum. Users can deposit stableCoin by calling `depositStableCoinForDistributeInPools`. This funds are being accumulated in the contract and counted in the `stableCoinBalanceForPools` variable. Then this funds can be used for adding liquidity to the `USDT/MIM` and `USDT/USDCe` pairs in SushiSwap.
 
 TO DO: The addLiquidity and removeLiquidity functions should implement and access modifier if it is wanted to. It would be also a good idea to implement some logic for swapping assets back to `StableCoin` after removing liquidity.
+
+Here are some diagrams for each funcitonality:
+
+1. First functionality:
+![First functionality](https://github.com/JMariadlcs/mini-defi-project/diagrams/first.png)
