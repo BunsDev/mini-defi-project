@@ -203,7 +203,7 @@ describe("Treasury tests", async function () {
             // Fourth step: remove liquidity
             console.log("First", await Treasury.connect(deployer).firstPairLpAmount())
             console.log("First", await Treasury.connect(deployer).secondPairLpAmount())
-            const removeLiquidity = await Treasury.connect(deployer).removeLiquidity(50, 50, Date.now())
+            const removeLiquidity = await Treasury.connect(deployer).removeLiquidity(100, 0, Date.now())
         })
     })
 })

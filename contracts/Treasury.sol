@@ -129,7 +129,6 @@ contract Treasury {
         uniswapRouter.removeLiquidity(IUniswapV2Pair(firstPair).token0(), IUniswapV2Pair(firstPair).token1(), firstLpAmountToRemove, 0, 0, address(this), deadline);
         firstPairLpAmount -= firstLpAmountToRemove;
 
-
         uniswapRouter.removeLiquidity(IUniswapV2Pair(secondPair).token0(), IUniswapV2Pair(secondPair).token1(), secondLpAmountToRemove, 0, 0, address(this), deadline);
         secondPairLpAmount -= secondLpAmountToRemove;
     }
