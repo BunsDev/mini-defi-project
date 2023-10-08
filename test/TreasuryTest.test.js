@@ -4,7 +4,7 @@ const { networks } = require("../hardhat.config")
 
 const deployerAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 const SushiRouterV2Address = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"
-let deployedTreasuryAddress = "0x6925527D24F23E1fb6fe0979Df06cbfc1FC4280B"
+let deployedTreasuryAddress = "0xe168053a0e143da7FE8E01F3C310cd1C9bdDf866"
 const WETHAddress = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
 const ARBAddress = "0x912CE59144191C1204E64559FE8253a0e49E6548"
 const USDCAddress = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
@@ -158,19 +158,14 @@ describe("Treasury tests", async function () {
             await USDT.connect(deployer).approve(await Treasury.getAddress(), USDTBalanceAfter)
             const deposit = await Treasury.connect(deployer).depositStableCoinForDistributeInPools(USDTBalanceAfter)
             const TreasuryUSDTBalanceAfter = await USDT.balanceOf(deployedTreasuryAddress)
-            const stableCoinBalanceForPools =  await Treasury.connect(deployer).stableCoinBalanceForPools()
-            console.log("StableCoinBalance", stableCoinBalanceForPools)
-            const firstPair = await Treasury.connect(deployer).firstPair()
-            const secondPair = await Treasury.connect(deployer).secondPair()
-            console.log("Pairs", firstPair, secondPair)
-            const first = await Treasury.connect(deployer).poolPercentages(firstPair.toString())
-            const second = await Treasury.connect(deployer).poolPercentages(secondPair.toString())
-            console.log("Pair1Percentage", first)
-            console.log("Pair2Percentage",second)
             assert(TreasuryUSDTBalanceAfter == USDTBalanceAfter)
 
             const addLiquidity = await Treasury.connect(deployer).addLiquidity(Date.now())
+            const firstPairLpAmount = await Treasury.connect(deployer).firstPairLpAmount()
+            const secondPairLpAmount = await Treasury.connect(deployer).secondPairLpAmount()
 
+            assert(firstPairLpAmount > 0)
+            assert(secondPairLpAmount > 0)
         });
     })
 

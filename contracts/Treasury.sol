@@ -99,9 +99,22 @@ contract Treasury {
         uint256 secondPoolAmount = stableCoinBalanceForPools - firstPoolAmount;
 
         stableCoinBalanceForPools = 0;
+        address[] memory path;
 
-        (, , uint256 firstPairLpAmount_) = uniswapRouter.addLiquidity(IUniswapV2Pair(firstPair).token0(), IUniswapV2Pair(firstPair).token1(), firstPoolAmount, 0, 0, 0, address(this), deadline);
-        (, , uint256 secondPairLpAmount_) = uniswapRouter.addLiquidity(IUniswapV2Pair(secondPair).token0(), IUniswapV2Pair(secondPair).token1(), secondPoolAmount, 0, 0, 0, address(this), deadline);
+        IERC20(IUniswapV2Pair(firstPair).token0()).approve(address(uniswapRouter), type(uint256).max);
+        path = new address[](2);
+        path[0] = IUniswapV2Pair(firstPair).token0();
+        path[1] = IUniswapV2Pair(firstPair).token1();
+        uint256[] memory amountsOut = uniswapRouter.swapExactTokensForTokens(firstPoolAmount / 2, 0, path, address(this), deadline);
+        IERC20(IUniswapV2Pair(firstPair).token1()).approve(address(uniswapRouter), type(uint256).max);
+        (, , uint256 firstPairLpAmount_) = uniswapRouter.addLiquidity(IUniswapV2Pair(firstPair).token0(), IUniswapV2Pair(firstPair).token1(), firstPoolAmount / 2, amountsOut[amountsOut.length - 1], 0, 0, address(this), deadline);
+        
+        IERC20(IUniswapV2Pair(secondPair).token0()).approve(address(uniswapRouter), type(uint256).max);
+        path[0] = IUniswapV2Pair(secondPair).token0();
+        path[1] = IUniswapV2Pair(secondPair).token1();
+        amountsOut = uniswapRouter.swapExactTokensForTokens(secondPoolAmount / 2, 0, path, address(this), deadline);
+         IERC20(IUniswapV2Pair(secondPair).token1()).approve(address(uniswapRouter), type(uint256).max);
+        (, , uint256 secondPairLpAmount_) = uniswapRouter.addLiquidity(IUniswapV2Pair(secondPair).token0(), IUniswapV2Pair(secondPair).token1(), secondPoolAmount / 2, amountsOut[amountsOut.length - 1], 0, 0, address(this), deadline);
         
         firstPairLpAmount += firstPairLpAmount_;
         secondPairLpAmount += secondPairLpAmount_;
@@ -115,6 +128,7 @@ contract Treasury {
         uint256 secondLpAmountToRemove = secondPercentage * secondPercentage / 100;
         (uint256 firstAmountA, uint256 firstAmountB) = uniswapRouter.removeLiquidity(IUniswapV2Pair(firstPair).token0(), IUniswapV2Pair(firstPair).token1(), firstLpAmountToRemove, 0, 0, address(this), deadline);
         address[] memory path;
+        path = new address[](2);
         if (firstAmountB > 0) { // swapTokenB to tokenA (tokenA always is stableCoin due to the selected pairs)
             IERC20(IUniswapV2Pair(firstPair).token1()).approve(address(uniswapRouter), firstAmountB);
             path[0] = IUniswapV2Pair(firstPair).token1();
