@@ -5,7 +5,7 @@ The contracts are being deployed to `Arbitrum`. The testing of the contracts has
 
 You should include an `.env` file with `PRIVATE_KEY` refering to your account private key.
 
-The deployed `Treasury` address is: `0x5b4D7CF06bB561Dc5FEfaB28De5B3C7DDdad66f6`
+The deployed `Treasury` address is: `0x79efC7932cc9EdB8D0d3D7D5fab95e0B77f09859`
 The integrated pools are:
 1. `USDT/USDC.e`: `0x8165c70b01b7807351EF0c5ffD3EF010cAbC16fB`.
 2. `USDT/MIM`: `0xB7a2F46B196DeCB610a3046053f757264AcF0537`.

@@ -4,7 +4,7 @@ const { networks } = require("../hardhat.config")
 
 const deployerAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266"
 const SushiRouterV2Address = "0x1b02dA8Cb0d097eB8D57A175b88c7D8b47997506"
-let deployedTreasuryAddress = "0x5b4D7CF06bB561Dc5FEfaB28De5B3C7DDdad66f6"
+let deployedTreasuryAddress = "0x79efC7932cc9EdB8D0d3D7D5fab95e0B77f09859"
 const WETHAddress = "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1"
 const ARBAddress = "0x912CE59144191C1204E64559FE8253a0e49E6548"
 const USDCAddress = "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8"
@@ -178,7 +178,7 @@ describe("Treasury tests", async function () {
             await WETH.connect(deployer).approve(await Treasury.getAddress(), WETHBalanceBefore)
 
             const timestamp = Date.now()
-            const amountIn = 1e18.toString()
+            const amountIn = 1e10.toString()
             const swap = await Treasury.connect(deployer).swapTokens([WETHAddress, USDTAddress], 0, WETHBalanceBefore, timestamp)
             const WETHBalanceAfter = await WETH.balanceOf(deployerAddress)
             const USDTBalanceAfter = await USDT.balanceOf(deployerAddress)

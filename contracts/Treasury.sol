@@ -95,7 +95,7 @@ contract Treasury {
 
     // @notice: Function use for adding liquidity to different pools
     function addLiquidity(uint256 deadline) external {
-        uint256 firstPoolAmount = stableCoinBalanceForPools * poolPercentages[firstPair] / 100;
+        uint256 firstPoolAmount = mulScale(stableCoinBalanceForPools,poolPercentages[firstPair], 100);
         uint256 secondPoolAmount = stableCoinBalanceForPools - firstPoolAmount;
 
         stableCoinBalanceForPools = 0;
@@ -113,7 +113,7 @@ contract Treasury {
         path[0] = IUniswapV2Pair(secondPair).token0();
         path[1] = IUniswapV2Pair(secondPair).token1();
         amountsOut = uniswapRouter.swapExactTokensForTokens(secondPoolAmount / 2, 0, path, address(this), deadline);
-         IERC20(IUniswapV2Pair(secondPair).token1()).approve(address(uniswapRouter), type(uint256).max);
+        IERC20(IUniswapV2Pair(secondPair).token1()).approve(address(uniswapRouter), type(uint256).max);
         (, , uint256 secondPairLpAmount_) = uniswapRouter.addLiquidity(IUniswapV2Pair(secondPair).token0(), IUniswapV2Pair(secondPair).token1(), secondPoolAmount / 2, amountsOut[amountsOut.length - 1], 0, 0, address(this), deadline);
         
         firstPairLpAmount += firstPairLpAmount_;
@@ -124,11 +124,14 @@ contract Treasury {
     function removeLiquidity(uint8 firstPercentage, uint8 secondPercentage, uint256 deadline) external {
         require(firstPercentage + secondPercentage == 100, "Percentage must be below 100");
 
-        uint256 firstLpAmountToRemove = firstPairLpAmount * firstPercentage / 100;
-        uint256 secondLpAmountToRemove = secondPairLpAmount * secondPercentage / 100;
+        uint256 firstLpAmountToRemove = mulScale(firstPairLpAmount, firstPercentage, 100);
+        
+        IERC20(firstPair).approve(address(uniswapRouter), type(uint256).max);
         uniswapRouter.removeLiquidity(IUniswapV2Pair(firstPair).token0(), IUniswapV2Pair(firstPair).token1(), firstLpAmountToRemove, 0, 0, address(this), deadline);
         firstPairLpAmount -= firstLpAmountToRemove;
 
+        uint256 secondLpAmountToRemove = mulScale(secondPairLpAmount, secondPercentage, 100);
+        IERC20(secondPair).approve(address(uniswapRouter), type(uint256).max);
         uniswapRouter.removeLiquidity(IUniswapV2Pair(secondPair).token0(), IUniswapV2Pair(secondPair).token1(), secondLpAmountToRemove, 0, 0, address(this), deadline);
         secondPairLpAmount -= secondLpAmountToRemove;
     }
@@ -138,5 +141,15 @@ contract Treasury {
         require(firstNewPercentage + secondNewPercentage == 100, "Percentages does not sum up 100");
         poolPercentages[firstPair] = firstNewPercentage;
         poolPercentages[secondPair] = secondNewPercentage;
+    }
+
+    // Internal functions
+    function mulScale (uint x, uint y, uint128 scale) internal pure returns (uint) {
+        uint a = x / scale;
+        uint b = x % scale;
+        uint c = y / scale;
+        uint d = y % scale;
+
+        return a * c * scale + a * d + b * c + b * d / scale;
     }
 }
